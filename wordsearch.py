@@ -1,6 +1,9 @@
+#!/usr/bin/python3
 import random
 import csv
 import categories as cat
+
+
 def insert_first_word(word):
     direction = random.randint(1,8)
     max = (size - len(word))
@@ -46,6 +49,8 @@ def insert_first_word(word):
     for i in range(0,size):
         #print(word_search[i])
         return locations
+		
+		
 def insert_new_word(word, location):
     global words_added
     #Location is a list of tuples with the format (x,y,direction, letter)
@@ -334,47 +339,70 @@ def insert_new_word(word, location):
             if not_inserted == False:
                 return location
     return location
+	
 def prepare_added_list(added_list):
     chunked_list = [added_list[i::3] for i in range(0,3)]
     return zip(chunked_list[0], chunked_list[1], chunked_list[2])
 
 
-def write_wordsearch():
-    for row in word_search:
-        file.writelines("\t")
-        for letter in row:
-            file.writelines("{} ".format(letter))
+def write_wordsearch(file_name, word_list, isAnswers=False):
+    if isAnswers:
+        file_name = file_name + '_Answers.txt'
+    else:
+        file_name = file_name + '.txt'
+    with open(file_name, 'w+') as file: 
+        for row in word_search:
+            file.writelines("\t")
+            for letter in row:
+                file.writelines("{} ".format(letter))
+            file.writelines("\n")
         file.writelines("\n")
-        # file.writelines([letter for letter in row])
-        print(row)
+        if not isAnswers:
+            col_writer = csv.writer(file, delimiter='\t')
+            col_writer.writerows(word_list)	
 
 
 category = ""
+# Getting the list of categories from the other file
 keys = list(cat.categories.keys())
+# Forcing the user to select an input from the list
 while category not in keys:
-    category = input("{}\nChoose a category from above: ".format(keys))
+    category = input("{}\nChoose a category from above: ".format(keys)).lower()
+# Collecting the list of words from the file
 word_list = cat.categories[category]
-size = int(input("Input a size for your Word Search: "))
+# Getting the 'hyper parameters'
+size = ''
+while not size.isdigit():
+    size = input("Input a size for your Word Search: ")
+size = int(size)
+file_name = 'wordsearches/' + input("Enter a name for your Word Search: ")
+# Generating the initial wordsearch filled with *
 word_search = [["*" for val in range(0,size)] for val1 in range(0, size)]
-file_name = input("Enter a name for your Word Search: ")
-file = open(file_name+".txt", "w")
+
+# Sorting the wordlist in reverse order
 word_list.sort(key=lambda x: len(x), reverse=True)
 words_added = [word_list[0]]
 location = insert_first_word(word_list[0])
+
 print("first word is {}".format(word_list[0]))
+
+# Going to try to add every word
 for x in range(1,len(word_list)):
     word = random.choice(word_list)
     location = insert_new_word(word, location)
     word_list.remove(word)
-write_wordsearch()
+# Preparing the list of words at the bottom
+words_added.sort(key=lambda x: len(x))
+bottom_list = prepare_added_list(words_added)
+# Writing the answer sheet
+write_wordsearch(file_name, bottom_list, True)
+#Replacing all the * characters with random letters
 for y in range(0,size):
     for x in range(0,size):
        if word_search[y][x] == '*':
            word_search[y][x] = random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-print("\n\n")
-write_wordsearch()
-words_added.sort(key=lambda x: len(x))
-col_writer = csv.writer(file, delimiter='\t')
-bottom_list = prepare_added_list(words_added)
-col_writer.writerows(bottom_list)
-file.close()
+# Finally writing the actual word search
+write_wordsearch(file_name, bottom_list)
+
+
+#file.close()
